@@ -132,7 +132,7 @@ Using your processed dataset, create your unique visualization(s).
   plot1
 ```
 
-![](netflix-04-20-2021_files/figure-gfm/Visualize-1.png)<!-- -->
+![](README_files/figure-gfm/Visualize-1.png)<!-- -->
 
 # Saving Image(s)
 
