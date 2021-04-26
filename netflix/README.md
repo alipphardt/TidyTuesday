@@ -1,7 +1,6 @@
 Netflix Shows
 ================
-Anthony Lipphardt
-2021-04-26
+Developed by Anthony Lipphardt
 
 # TidyTuesday
 

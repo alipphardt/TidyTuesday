@@ -1,8 +1,6 @@
 ---
 title: "Netflix Shows"
-author:
-  - Anthony Lipphardt
-date: 2021-04-26
+author: Developed by Anthony Lipphardt
 output: github_document
 
 knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
