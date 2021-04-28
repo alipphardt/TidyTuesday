@@ -1,0 +1,168 @@
+---
+title: "CEO Departures"
+author: Developed by Anthony Lipphardt
+output: github_document
+
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidytuesdayR")
+
+library("tidyverse")
+library("stringi")
+library("lubridate")
+library("scales")
+library("ggthemes")
+
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make available in the `departures` object.
+
+[CEO Departures](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-04-27/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+# tuesdata <- tidytuesdayR::tt_load('2021-04-27')
+# write_csv(tuesdata$departures, "departures.csv")
+
+departures <- read_csv('departures.csv')
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+glimpse(head(departures, 10))
+
+```
+
+# Wrangling
+
+Explore the data and process it into prepared dataframes for visualization.
+
+```{r Wrangle}
+
+male_pronouns = c("He", "he", "Him", "him", "His", "his", "Mr", "Mister")
+female_pronouns = c("She", "she", "Her", "her", "Hers", "hers", "Miss", "Mrs", "Ms")
+
+pronoun_regex = function(pronouns){
+  results = stri_join_list(lapply(list(pronouns), 
+                        FUN = function(pronoun){ 
+                          return(paste0("\\b", pronoun, "\\b")) 
+                          }), sep = "|")
+  return(results)
+}
+
+
+departures %>%
+  mutate(gender = case_when(
+    str_detect(notes, regex(pronoun_regex(male_pronouns))) ~ 'M',
+    str_detect(notes, regex(pronoun_regex(female_pronouns))) ~ 'F',
+    TRUE ~ 'NA'
+  )) %>%
+  filter(gender != 'NA', !is.na(departure_code)) %>%
+  group_by(gender) %>%
+  summarize(count = n()) 
+   
+
+departure_by_gender = departures %>%
+  mutate(gender = case_when(
+    str_detect(notes, regex(pronoun_regex(male_pronouns))) ~ 'M',
+    str_detect(notes, regex(pronoun_regex(female_pronouns))) ~ 'F',
+    TRUE ~ 'NA'
+  )) %>%
+  filter(gender != 'NA', !is.na(departure_code)) %>%
+  group_by(gender, departure_code) %>%
+  summarize(count = n()) %>%
+  mutate(gender_percent = count/sum(count)*100) %>%
+  mutate(gender_percent = ifelse(gender == "M", gender_percent,-1*gender_percent)) %>%
+  filter(departure_code < 8) %>%
+  mutate(departure_code = case_when(
+    departure_code == 1 ~ "Death",
+    departure_code == 2 ~ "Illness",
+    departure_code == 3 ~ "Dismissed, Job Performance",
+    departure_code == 4 ~ "Dismissed, Legal Violations",
+    departure_code == 5 ~ "Retired",
+    departure_code == 6 ~ "New Opportunity",
+    departure_code == 7 ~ "Other",
+    departure_code == 8 ~ "Missing",
+    departure_code == 9 ~ "Error"
+  ))
+
+
+
+```
+
+
+# Visualization(s)
+
+Using your processed dataset, create your unique visualization(s).
+
+```{r Visualize, fig.width=16, fig.height=9}
+
+plot1 = departure_by_gender %>%
+  arrange(desc(gender_percent)) %>%
+  mutate(departure_code = factor(departure_code, levels=departure_code)) %>%
+  ggplot(aes(x=departure_code, y=gender_percent, fill=gender)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Reasons for CEO Departure, by Gender",
+       subtitle = "Based on 128 Female CEOs and 4964 Male CEOs",
+       caption = "Source: DataIsPlural, 2021",
+       x = "",
+       y = "Percentage of CEO Departures",
+       fill = "Gender") +   
+  ylim(-60,60) +
+  coord_flip() +
+  theme_few() + 
+  scale_color_few() +  
+  theme(plot.title = element_text(size=20, face="bold"),
+        plot.subtitle = element_text(size=18),
+        plot.caption= element_text(size=14),
+        axis.text.x = element_text(size=16),
+        axis.title.x = element_text(size=16),
+        axis.text.y = element_text(size=16),
+        axis.title.y = element_text(size=16),
+        )
+
+plot1
+  
+```
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(plot = plot1,
+  filename = "reasons-for-ceo-departure-by-gender.png",
+  width=16,
+  height=9,
+  device = "png")
+
+
+```
