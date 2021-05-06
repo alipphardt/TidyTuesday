@@ -1,0 +1,165 @@
+---
+title: "Water Sources"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidytuesdayR")
+
+library("tidyverse")
+
+library("maps")
+library("mapdata")
+
+library("lubridate")
+library("gganimate")
+
+library("ggthemes") # using theme_map
+
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make available in the `water` object.
+
+[Water Sources](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-04/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+# tuesdata <- tidytuesdayR::tt_load(2021, week = 19)
+# water <- tuesdata$water
+# write_csv(water, 'water.csv')
+
+water <- read_csv('water.csv')
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+head(glimpse(water), 10)
+
+```
+
+# Wrangling
+
+Explore the data and process it into prepared dataframes for visualization.
+
+```{r Wrangle}
+
+water_africa = water %>%
+  
+  select(row_id, 
+         lat_deg, 
+         lon_deg, 
+         report_date, 
+         water_source, 
+         install_year, 
+         country_name) %>%
+  
+  mutate(date = parse_date_time(report_date, "m/d/Y"),
+         water_source = case_when(
+           str_detect(water_source, "Spring") ~ "Spring",
+           str_detect(water_source, "Shallow Well") ~ "Shallow Well",
+           str_detect(water_source, "Surface Water") ~ "Surface Water",
+           TRUE ~ water_source
+           ),
+         year = year(date)) %>%
+  
+  filter(!is.na(country_name), 
+         !is.na(water_source),
+         
+         # Exclude Peru
+         country_name != "Peru",
+         
+         # Limit to after 2000 and records that were in the year of install
+         year == install_year,
+         year >= 2000,
+         
+         # Restrict to bounding box around continental Africa and madagascar
+         lat_deg < 55,
+         lat_deg > -25,
+         lon_deg > -38,
+         lon_deg < 40)
+  
+
+```
+
+
+# Visualization(s)
+
+Using your processed dataset, create your unique visualization(s).
+
+```{r Visualize, results = FALSE}
+
+plot <- ggplot() +
+  
+  # Only show shapes in world map contained in specified bounding box
+  borders("world", 
+          colour = "gray85", 
+          fill = "gray80",
+          ylim = c(-38,40), # longitude
+          xlim = c(-25,55)) + # latitude
+  
+  theme_map() +
+  
+  # Show points colored by water source type. Grouping variable is set to row_id so that
+  # gganimate treats each record as distinct point without tween animations
+  geom_point(aes(x = lon_deg, y = lat_deg, color = water_source, group=row_id),
+             data = water_africa, 
+             alpha = 1,
+             size = 1,
+             show.legend = TRUE) +
+
+  # Points should be added to map by year, fading in upon enter, and once added
+  # should not be removed
+  transition_time(year) +
+  enter_fade() +
+  shadow_mark(past = TRUE, future=FALSE) +  
+  ggtitle('Water Sources in Africa Installed Over Time: {as.integer(frame_time)}') +
+  
+  # Extra formatting to adjust titles and size of point in legend
+  labs(color = "Water Source") + 
+  theme(plot.title = element_text(size = 20, face = "bold"),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12)) +
+   guides(color = guide_legend(override.aes = list(size=5))) +
+  
+  # Force Aspect Ratio
+  coord_fixed()
+
+
+# Render a PNG for each unique frame and stitch together into animated GIF
+animate(plot, renderer = gifski_renderer(), units = "px", width = 500, height = 500)
+
+# Save to GIF file for immediate display
+anim_save('africa-water-installations.gif')
+
+  
+```
+
+!['Water sources installed in Africa between 2000 and 2020. Bore hole installations are by far the most frequent type'](africa-water-installations.gif)
+
