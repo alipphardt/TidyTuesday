@@ -1,0 +1,280 @@
+---
+title: "Ask a Manager Survey"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidytuesdayR")
+library("tidyverse")
+
+library("ggbeeswarm")
+library("patchwork")
+library("viridis")
+library("extrafont")
+library("ggtext")
+library("gridExtra")
+
+loadfonts(device = "win", quiet = TRUE)
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make available in the `survey` object.
+
+[Broadband](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-11/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+# tuesdata <- tidytuesdayR::tt_load(2021, week = 21)
+# survey <- tuesdata$survey
+# write_csv(survey, 'survey.csv')
+
+survey <- read_csv('survey.csv')
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+head(glimpse(survey), 10)
+
+```
+
+# Wrangling
+
+Explore the data and process it into prepared dataframes for visualization.
+
+```{r Wrangle}
+
+# Filter to records for self-identified data scientists
+data_science = survey %>%
+  filter(str_detect(job_title, regex('data scien', ignore_case = T)) | str_detect(additional_context_on_job_title, regex('data scien', ignore_case = T)))
+
+# Percent breakdown for years experience in data science
+ds_experience = data_science %>%
+  count(years_of_experience_in_field) %>%
+  ungroup() %>%
+  mutate(percent = n/sum(n)*100,
+         year_order = str_split(years_of_experience_in_field, regex('\\s|-')) %>% 
+           map_chr(., 1) %>% 
+           as.integer()) %>%
+  arrange(year_order)
+
+# Percent breakdown for level of education in data science
+ds_education = data_science %>%
+  group_by(highest_level_of_education_completed) %>%
+  summarize(count = n()) %>%
+  ungroup() %>%
+  mutate(percent = count/sum(count) * 100,
+         ed_order = case_when(
+           highest_level_of_education_completed == "College degree" ~ 2,
+           highest_level_of_education_completed == "High School" ~ 1,
+           highest_level_of_education_completed == "Master's degree" ~ 3,
+           highest_level_of_education_completed == "PhD" ~ 4,
+    
+           TRUE ~ 5
+  )) %>%
+  arrange(ed_order)
+
+# Percent breakdown by gender for all survey responses
+all_sex = survey %>%
+  filter(gender %in% c("Woman", "Man")) %>%
+  count(gender) %>%
+  ungroup() %>%
+  mutate(percent = n/sum(n)*100) %>%
+  arrange(desc(percent))
+
+# Percent breakdown by gender for data scientist responses
+ds_sex = data_science %>%
+  filter(gender %in% c("Woman", "Man")) %>%
+  count(gender) %>%
+  ungroup() %>%
+  mutate(percent = n/sum(n)*100) %>%
+  arrange(desc(percent))
+
+# Select Top 3 Industries Represented for Data Science
+ds_industry = data_science %>%
+  group_by(industry) %>%
+  summarize(count = n()) %>%
+  ungroup() %>%
+  slice_max(count, n=3) %>%
+  pull(industry)
+  
+# Salary data among data scientists in top 3 represented industries
+ds_top3 = data_science %>%
+  filter(industry %in% ds_industry,
+         currency == "USD",
+         annual_salary > 1000) %>%
+  mutate(year_order = str_split(years_of_experience_in_field, regex('\\s|-')) %>% 
+           map_chr(., 1) %>% 
+           as.integer())
+
+```
+
+
+# Visualization(s)
+
+Using your processed dataset, create your unique visualization(s).
+
+```{r Visualize, results = FALSE, fig.width=16, fig.height=9}
+
+font.family = "Segoe UI Light"
+
+# Pie charts for gender breakdown among all responses vs data scientist responses
+
+plot_sex_all = all_sex %>%
+  mutate(ypos = cumsum(percent)- 0.5*percent,
+         gender = case_when(
+           gender == "Man" ~ "Men",
+           TRUE ~ "Women"
+         )) %>%
+  ggplot(aes(x="", y=percent, fill=gender)) + 
+  geom_bar(stat="identity", width=1, show.legend = FALSE) +
+  geom_text(aes(y = ypos, label = gender), color = "white", size=3) +
+  coord_polar("y", start=0) +
+  theme_void() +
+  scale_fill_brewer(palette="Set1") +
+  labs(title = "All Respondents",
+       fill = "Gender:") +
+  theme(
+    text = element_text(family = font.family),
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5)
+  )
+
+plot_sex_ds = ds_sex %>%
+  mutate(ypos = cumsum(percent)- 0.5*percent,
+         gender = case_when(
+           gender == "Man" ~ "Men",
+           TRUE ~ "Women"
+         )) %>%  
+  ggplot(aes(x="", y=percent, fill=gender)) + 
+  geom_bar(stat="identity", width=1, show.legend = FALSE) +
+  geom_text(aes(y = ypos, label = gender), color = "white", size=3) +  
+  coord_polar("y", start=0) +
+  theme_void() +
+  scale_fill_brewer(palette="Set1") +  
+  labs(title = "Data Scientists",
+       fill = "") +
+  theme(
+    text = element_text(family = font.family),
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5)
+  )
+
+# Bar Chart for Highest Level of Education
+
+plot_education = ds_education %>%
+  mutate(highest_level_of_education_completed = fct_reorder(highest_level_of_education_completed, ed_order)) %>%
+  ggplot(aes(x=highest_level_of_education_completed, y=percent)) +
+  geom_col(fill = "#26418f") +
+  labs(title = "Highest Level of Education Completed",
+       y = "",
+       x = "") +
+  scale_y_continuous(labels = function(x) paste0(x, '%')) +  
+  theme(
+    text = element_text(family = font.family),
+    plot.title = element_text(size = 12, face = "bold")
+  )
+
+# Horizontal Bar Chart for Years of Experience in Field
+
+plot_experience = ds_experience %>% 
+  mutate(years_of_experience_in_field = fct_reorder(years_of_experience_in_field, year_order)) %>%
+  ggplot(aes(x=years_of_experience_in_field, y=percent, fill = log(year_order))) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Years of Experience in Field",
+       y = "",
+       x = "") + 
+  scale_y_continuous(labels = function(x) paste0(x, '%'), limits = c(0,40)) +
+  scale_fill_viridis() +
+  theme(
+    text = element_text(family = font.family),
+    plot.title = element_text(size = 12, face = "bold")
+  ) +
+  coord_flip()
+
+# Swarm plot for annual salary, colored by years of experience
+
+plot_salary = ds_top3 %>%
+  ggplot(aes(x=industry, y=annual_salary, color = log(year_order))) +
+  geom_beeswarm(size = 3, show.legend = FALSE, priority = "density") + 
+  labs(title = "Annual Salary of Respondents for Top 3 Industries",
+       y = "",
+       x = "") +
+  scale_y_continuous(labels=scales::dollar_format()) +
+  scale_color_viridis() +
+  theme(
+    text = element_text(family = font.family),
+    plot.title = element_text(size = 12, face = "bold")
+  )
+
+# Using patchwork for grid layout
+
+layout = "
+#AAABBB#
+#AAABBB#
+#AAABBB#
+CCCCCCCC
+CCCCCCCC
+CCCCCCCC
+DDDDEEEE
+DDDDEEEE
+DDDDEEEE
+"
+
+final_plot = wrap_plots(
+  A = plot_sex_all,
+  B = plot_sex_ds,
+  C = plot_education,
+  D = plot_experience,
+  E = plot_salary, 
+  design = layout) + 
+  plot_annotation(title = "Data Scientist Responses",
+                  subtitle = "Of more than <strong>24,000</strong> survey respondents, <strong>161</strong> self-identified as a <strong>Data Scientist</strong>",
+                  caption = "Source: Ask a Manager Survey, 2021",
+                  theme = theme(text = element_text(family = font.family),
+                                plot.title = element_text(size = 24, face = "bold", hjust = 0.5),
+                                plot.subtitle = element_markdown(size = 16, hjust = 0.5),
+                                plot.caption = element_text(size = 12)))
+
+
+```
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+#This will save your most recent plot
+ggsave(plot = final_plot,
+  filename = "data-science-responses.png",
+  width=16,
+  height=9,
+  device = "png")
+
+```
+
+!['Survey responses for those that self identified as a Data Scientist'](data-science-responses.png)
