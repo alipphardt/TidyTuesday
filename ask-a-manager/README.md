@@ -21,7 +21,7 @@ to participate\!
 
 Download the weekly data and make available in the `survey` object.
 
-[Broadband](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-11/readme.md)
+[Ask a Manager Survey](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-11/readme.md)
 
 ``` r
 # Loading Data for the First Time
