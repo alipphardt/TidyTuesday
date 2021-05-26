@@ -1,0 +1,224 @@
+---
+title: "Mario Kart World Records"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidytuesdayR")
+library("tidyverse")
+library("lubridate")
+library("showtext") 
+library("ggtext")
+library("grid")
+library("png")
+library("Cairo")
+
+# showtext doesn't play well with extrafonts, so importing all fonts via showtext
+font_add(family = "supermario", regular = "SuperMario256.ttf")
+font_add(family = "segoeuibold", regular = "segoeuib.ttf")
+showtext_auto()
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make it available in the `records` and `drivers` objects.
+
+[Mario Kart World Records](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-05-25/readme.md)
+
+```{r Load}
+
+ # Loading Data for the First Time
+ # tuesdata <- tidytuesdayR::tt_load(2021, week = 22)
+ # records <- tuesdata$records
+ # drivers <- tuesdata$drivers
+ # 
+ # write_csv(records, 'records.csv')
+ # write_csv(drivers, 'drivers.csv')
+
+ records <- read_csv('records.csv')
+ drivers <- read_csv('drivers.csv')
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+head(glimpse(records), 10)
+
+head(glimpse(drivers), 10)
+
+```
+
+# Wrangling
+
+Explore the data and process it into prepared dataframes for visualization.
+
+```{r Wrangle}
+
+# Find most contentious track records by finding tracks with highest count of records
+most_records = records %>%
+  count(track, type, shortcut, system_played) %>%
+  ungroup() %>%
+  slice_max(n, n = 25)
+
+
+# These tracks appear to be the most contentious
+tracks = c("Sherbet Land", "Wario Stadium", "D.K.'s Jungle Parkway", "Mario Raceway", "Banshee Boardwalk", "Kalimari Desert")
+
+# We'll filter the records to single lap, no shortcut and parse the datetime
+select_records = records %>% 
+  filter(track %in% tracks, 
+         type == "Single Lap",
+         shortcut == "No") %>%
+  mutate(date = parse_date_time(date, "Y-m-d")) %>%
+  select(track, player, system_played, date, time)
+
+
+```
+
+
+# Visualization(s)
+
+Using your processed dataset, create your unique visualization(s).
+
+```{r Visualize, results = FALSE, fig.width=16, fig.height=9}
+
+# The most recent record will be marked with a koopa shell
+green_shell = readPNG("green-shell.png")
+red_shell = readPNG("red-shell.png") 
+
+# Mario themed color palette
+cornflower_blue = "#6185F8"
+burnt_red = "#B72504"
+lawn_green = "#73f218"
+
+# Plot world records over time by most contentious tracks
+mario_plot = select_records %>%
+  ggplot(aes(x=date, y=time, color=system_played)) +
+  geom_line(size = 2, linetype = "dashed", show.legend = FALSE) +
+  facet_wrap(~track, scales="free_y") +
+
+  scale_color_manual(values=c(burnt_red, lawn_green)) +
+  
+  labs(title = "Mario Kart 64 Track Records (Single Lap, No Shortcuts)",
+       subtitle = glue::glue("<span style='color: {burnt_red};'>**NTSC**</span> and <span style='color: {lawn_green}'>**PAL**</span> records for the game's most contentious track records"),
+       x = "World Record Date",
+       y = "Seconds (Normalized to PAL Time)",
+       caption = "@a_lipphardt | Source: Mario Kart World Records") +
+  
+  theme_light() +
+  theme(plot.title = element_textbox_simple(family = "supermario", 
+                                  color ="white", 
+                                  halign = 0.5, 
+                                  size = 20,
+                                  margin = margin(t=15,b=10)),
+        
+        plot.subtitle = element_textbox_simple(family = "segoeuibold",
+                                         color = "white", 
+                                         halign = 0.5,
+                                         size = 18,
+                                         margin = margin(b=10)),
+        
+        plot.caption = element_textbox_simple(family = "segoeuibold",
+                                              color = "white",
+                                              size = 14,
+                                              halign = 1,
+                                              margin = margin(t=5)),
+        
+        plot.background = element_rect(fill = cornflower_blue),
+        
+        strip.text = element_text(family = "supermario", 
+                                  color = "white",
+                                  size = 14),
+        
+        strip.background = element_rect(fill = "black"),
+        
+        axis.title = element_text(family = "segoeuibold",
+                                  color = "white", 
+                                  face = "bold", 
+                                  size = 16),
+        
+        axis.title.y = element_text(margin = margin(r = 10)),
+        axis.title.x = element_text(margin = margin(t = 10)),        
+        
+        axis.text = element_textbox_simple(family = "segoeuibold",
+                                           color = "white")) 
+
+plot = mario_plot
+
+# Add koopa shells to most recent track record for each track
+
+for(selected_track in tracks){
+
+  
+  track_data = select_records %>% filter(track == selected_track)
+  
+  ntsc = select_records %>% filter(track == selected_track, system_played == 'NTSC')
+  pal = select_records %>% filter(track == selected_track, system_played == 'PAL')
+  
+  plot = plot + layer(data = ntsc, 
+        stat = StatIdentity, 
+        position = PositionIdentity, 
+        geom = ggplot2:::GeomCustomAnn,
+        inherit.aes = TRUE, 
+        params = list(grob = rasterGrob(red_shell, interpolate=FALSE,width = 2, height = 2),    
+                      xmin = max(ntsc$date) - months(6), 
+                      xmax = max(ntsc$date) + months(6), 
+                      ymin = min(ntsc$time) - (max(ntsc$time)*0.0015), 
+                      ymax = min(ntsc$time) + (max(ntsc$time)*0.0015)))
+
+  plot = plot + layer(data = pal, 
+        stat = StatIdentity, 
+        position = PositionIdentity, 
+        geom = ggplot2:::GeomCustomAnn,
+        inherit.aes = TRUE, 
+        params = list(grob = rasterGrob(green_shell, interpolate=FALSE,width = 2, height = 2), 
+                      xmin = max(pal$date) - months(6), 
+                      xmax = max(pal$date) + months(6), 
+                      ymin = min(pal$time) - (max(pal$time)*0.0015), 
+                      ymax = min(pal$time) + (max(pal$time)*0.0015)))  
+}
+
+plot
+
+
+```
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+#This will save your most recent plot
+ggsave(plot = plot,
+  filename = "mario-world-records.png",
+  width=16,
+  height=9,
+  type = "cairo",
+  device = "png",
+  dpi = 96)
+
+```
