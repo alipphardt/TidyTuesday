@@ -175,8 +175,8 @@ mario_plot = select_records %>%
 
   scale_color_manual(values=c(burnt_red, lawn_green)) +
   
-  labs(title = "Mario Kart 64 Track Records (Single Lap, No Shortcuts)",
-       subtitle = glue::glue("<span style='color: {burnt_red};'>**NTSC**</span> and <span style='color: {lawn_green}'>**PAL**</span> records for the game's most contentious track records"),
+  labs(title = "<img src='lakitu.png' height='40'/>&nbsp;&nbsp;Mario Kart 64 Track Records (Single Lap, No Shortcuts)",
+       subtitle = glue::glue("<span style='color: {burnt_red};'>**NTSC**</span> and <span style='color: {lawn_green}'>**PAL**</span> records for the game's most contentious tracks"),
        x = "World Record Date",
        y = "Seconds (Normalized to PAL Time)",
        caption = "@a_lipphardt | Source: Mario Kart World Records") +
@@ -219,6 +219,7 @@ mario_plot = select_records %>%
         axis.text = element_textbox_simple(family = "segoeuibold",
                                            color = "white")) 
 
+
 plot = mario_plot
 
 # Add koopa shells to most recent track record for each track
@@ -257,6 +258,9 @@ for(selected_track in tracks){
 plot
 ```
 
+    ## Warning in png::readPNG(get_file(path), native = TRUE): libpng warning: iCCP:
+    ## known incorrect sRGB profile
+
 ![](README_files/figure-gfm/Visualize-1.png)<!-- -->
 
 # Saving Image(s)
@@ -274,3 +278,6 @@ ggsave(plot = plot,
   device = "png",
   dpi = 96)
 ```
+
+    ## Warning in png::readPNG(get_file(path), native = TRUE): libpng warning: iCCP:
+    ## known incorrect sRGB profile
