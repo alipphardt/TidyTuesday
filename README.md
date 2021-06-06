@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 23 - Survivor TV Show
+[![Survivor TV Show](survivor-tv-show/survivor.png)](https://github.com/alipphardt/TidyTuesday/tree/main/survivor-tv-show)
+
 ## Week 22 - Mario Kart 64 World Records
 [![Mario Kart 64 World Records](mario-kart-world-records/mario-world-records.png)](https://github.com/alipphardt/TidyTuesday/tree/main/mario-kart-world-records)
 
