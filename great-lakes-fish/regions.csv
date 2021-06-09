@@ -1,0 +1,32 @@
+lake,region,region_order
+Erie,U.S. Total,1
+Erie,Michigan (MI),1.1
+Erie,New York (NY),1.2
+Erie,Ohio (OH),1.3
+Erie,Pennsylvania (PA),1.4
+Erie,Canada (ONT),2
+Huron,U.S. Total (MI),3
+Huron,U.S. Huron Proper (HP),3.1
+Huron,U.S. Saginaw Bay (SB),3.2
+Huron,Total Canada (ONT),4
+Huron,Huron Proper (HP),4.1
+Huron,Georgian Bay (GB),4.2
+Huron,North Channel (NC),4.3
+Michigan,U.S. Total,5
+Michigan,MI State Total,5.1
+Michigan,Green Bay (MI),5.11
+Michigan,Mich. Proper (MI),5.12
+Michigan,WI State Total,5.2
+Michigan,Green Bay (WI),5.21
+Michigan,Mich. Proper (WI),5.22
+Michigan,Illinois (IL),5.3
+Michigan,Indiana (IN),5.4
+Ontario,U.S. Total (NY),6
+Ontario,Canada (ONT),7
+Saint Clair,U.S. Total (MI),8
+Saint Clair,Canada (ONT),9
+Superior,U.S. Total,10
+Superior,Michigan (MI),10.1
+Superior,Wisconsin (WI),10.2
+Superior,Minnesota (MN),10.3
+Superior,Canada (ONT),11
