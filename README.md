@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 24 - Great Lakes Fish
+[![Great Lakes Fish](great-lakes-fish/chubs.png)](https://github.com/alipphardt/TidyTuesday/tree/main/great-lakes-fish)
+
 ## Week 23 - Survivor TV Show
 [![Survivor TV Show](survivor-tv-show/survivor.png)](https://github.com/alipphardt/TidyTuesday/tree/main/survivor-tv-show)
 
