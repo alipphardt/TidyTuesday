@@ -295,10 +295,10 @@ blank = tibble(stat = c("Likes", "Retweets"), username = rep("blank",2), percent
 # Order the colors according to Dubois and keep it for the two groups
 colors = stats %>%
   bind_rows(blank) %>%
-  filter(stat == "Likes") %>%  
   mutate(username = fct_reorder(username, percent, .desc = TRUE),
          Color = as.character(as.numeric(username))) %>%
-  select(username, Color)
+  select(username, Color) %>%
+  distinct() 
 
 
 # Format text to avoid rewriting manually with the line break
@@ -310,8 +310,8 @@ format_text <- function(username){
 }
 
 # Coordinate for the legend
-coord <- tibble(x = c(-48, -48, 48, 48, 48),
-               y = c(7.5, -7.5, 15, 0, -14))
+coord <- tibble(x = c(-48, -48, -48, 48, 48, 48),
+               y = c(15, 0, -14, 15, 0, -14))
 
 # Legend with coordinate and text formated
 legend_format <- colors %>%
@@ -326,8 +326,8 @@ legend_format <- colors %>%
 
 
 # Palettes 
-dubois_pal <- c("1" = NA, "2" = "#DD263F", "3" = "#FFC500", "4" = "#7889B3", "5" = "#E2D4C1", "6" = "#B39B88")
-dubois_col <- c("1" = NA, "2" = "#C0B5A5", "3" = "#C0B5A5", "4" = "#C0B5A5", "5" = "#C0B5A5", "6" = "#C0B5A5")
+dubois_pal <- c("1" = NA, "2" = "#DD263F", "3" = "#FFC500", "4" = "#7889B3", "5" = "#E2D4C1", "6" = "#B39B88", "7" = "#ffc0cb")
+dubois_col <- c("1" = NA, "2" = "#C0B5A5", "3" = "#C0B5A5", "4" = "#C0B5A5", "5" = "#C0B5A5", "6" = "#C0B5A5", "7" = "#C0B5A5")
 
 
 # background & title
@@ -365,7 +365,7 @@ chart <- stats %>%
 legend_plt <- legend_format %>%
   ggplot() +
   geom_circle(aes(x0 = x, y0 = y, r = 3, fill = Color), color = "#BFB7A6") +
-  geom_text(data = head(legend_format,2),aes(x = x + 5, y = y, label = username), hjust = 0, family = "rajdhani", size = 3.5) +
+  geom_text(data = head(legend_format,3),aes(x = x + 5, y = y, label = username), hjust = 0, family = "rajdhani", size = 3.5) +
   geom_text(data = tail(legend_format,3),aes(x = x - 5, y = y, label = username), hjust = 1, family = "rajdhani", size = 3.5) +
   scale_fill_manual(values = dubois_pal) +
   scale_x_continuous(limits = c(-55,55))+
@@ -380,10 +380,10 @@ final = ggdraw(main) +
   draw_text(x = 0.95, y = 0.01, text = "Source: #DuBoisChallenge tweets | @a_lipphardt", family = "rajdhani", size = 10, color = "grey30", hjust = 1)
 
 
-ragg::agg_png(here::here("render", "dubois.png"), res = 320, width = 8.25, height = 10.6, units = "in")
+ragg::agg_png(here::here("render", "dubois-v2.png"), res = 320, width = 8.25, height = 10.6, units = "in")
 
 final
 dev.off()
 ```
 
-![Engagement for Du Bois Challenge](render/dubois.png)
+![Engagement for Du Bois Challenge](render/dubois-v2.png)
