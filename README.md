@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 25 - Du Bois Challenge and Juneteenth Revisited
+[![Du Bois Challenge Tweet Engagement](juneteenth/render/dubois.png)](https://github.com/alipphardt/TidyTuesday/tree/main/juneteenth)
+
 ## Week 24 - Great Lakes Fish
 [![Great Lakes Fish](great-lakes-fish/chubs.png)](https://github.com/alipphardt/TidyTuesday/tree/main/great-lakes-fish)
 
