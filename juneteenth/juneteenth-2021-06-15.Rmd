@@ -283,7 +283,7 @@ legend_plt <- legend_format %>%
 final = ggdraw(main) + 
   draw_plot(chart, x = -0.1, y = -0.1, width = 1.2, height = 1.2) +
   draw_plot(legend_plt, x = 0, y = 0.35, width = 1, height = 0.3)+
-  draw_text(x = 0.95, y = 0.01, text = "Source: #DuBoisChallenge tweets | @_alipphardt", family = "rajdhani", size = 10, color = "grey30", hjust = 1)
+  draw_text(x = 0.95, y = 0.01, text = "Source: #DuBoisChallenge tweets | @a_lipphardt", family = "rajdhani", size = 10, color = "grey30", hjust = 1)
 
 
 ragg::agg_png(here::here("render", "dubois.png"), res = 320, width = 8.25, height = 10.6, units = "in")
