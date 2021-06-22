@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 26 - Park Access
+![Select cities with the greatest change in available parkland are shown. Albuquerque, Jacksonville, Denver, and Nashville not only added to their available parkland, but exhibited an increase in median park size. Although Seattle, San Antonio, Mesa, and Fresno added additional parkland, they exhibited a decrease in median park size.](park-access/parkland.png)
+
 ## Week 25 - Du Bois Challenge and Juneteenth Revisited
 [![Du Bois Challenge Tweet Engagement](juneteenth/render/dubois-v2.png)](https://github.com/alipphardt/TidyTuesday/tree/main/juneteenth)
 

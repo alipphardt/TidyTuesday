@@ -1,0 +1,261 @@
+---
+title: "Park Access"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+
+As such we encourage everyone of all skills to participate!
+
+```{r setup, warning=FALSE, results = FALSE, message = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidytuesdayR")
+library("tidyverse")
+library("scales")
+library("glue")
+library("ggrepel")
+library("ggtext")
+library("Cairo")
+library("extrafont")
+
+loadfonts(device = "win", quiet = TRUE)
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make it available in the `parks` object.
+
+[Park Access](https://github.com/rfordatascience/tidytuesday/tree/master/data/2021/2021-06-22)
+
+```{r Load}
+
+ # Loading Data for the First Time
+# tuesdata <- tidytuesdayR::tt_load(2021, week = 26)
+# parks <- tuesdata$parks
+# write_csv(parks, 'parks.csv')
+
+parks <- read_csv('parks.csv') %>%
+  mutate(park_pct_city_data = as.numeric(str_replace(park_pct_city_data, "%", "")),
+         pct_near_park_data = as.numeric(str_replace(pct_near_park_data, "%", "")),
+         spend_per_resident_data = as.numeric(str_replace(spend_per_resident_data, "\\$", "")))
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+head(glimpse(parks), 10)
+
+
+```
+
+# Wrangling and Exploration
+
+Coverage is from 2012 through 2020, with 40 cities initially ranked and increasing to close to 100 over time.
+
+
+```{r city_count}
+
+parks %>% count(year)
+
+```
+
+The most recent ParkScore index is based off four metrics: park access, acreage, investment, and amenities. However, there is a high level of missingness due to the fact that additional metrics were introduced over time. Specifically, we can see that basketball, dogpark, and recreation and senior centers were not tracked from 2012-2014. Restrooms and splashgrounds were not initially tracked from 2012-2017. And finally, number of benches was not tracked in 2018-2020.
+
+```{r missingness}
+
+parks %>% select(contains('_data'), park_benches) %>% 
+  mutate(id = row_number()) %>%
+  gather(-id, key = "key", value = "val") %>%
+  mutate(isna = is.na(val)) %>%
+  ggplot(aes(key, id, fill = isna)) +
+  geom_raster(alpha = 0.8) +
+  scale_fill_manual(name = "",
+        values = c('steelblue', 'tomato3'),
+        labels = c("Present", "Missing")) +
+  labs(x = "Variable",
+       y = "Row Number", title = "Missing values in rows") +
+  coord_flip() + 
+  theme_minimal()
+
+
+parks %>% filter(is.na(splashground_data)) %>% count(year)
+parks %>% filter(is.na(basketball_data)) %>% count(year)
+parks %>% filter(is.na(park_benches)) %>% count(year)
+
+
+```
+
+# Visualization(s)
+
+Let's look and see what cities were reported in both 2012 and 2020. 37 of the 40 cities from the original 2012 report are in the 2020 report. We can plot the top 10 cities with the largest gains/drops in median park size.
+
+```{r compare_size, fig.width=8, fig.height=9}
+
+compare_size = parks %>% filter(year == 2020) %>% 
+  select(year, city, med_park_size_data, park_pct_city_data) %>%
+  inner_join(by = c("city"), 
+             parks %>% 
+               filter(year == 2012) %>% 
+               select(year, city, med_park_size_data, park_pct_city_data)) %>%
+  mutate(park_size_2020 = med_park_size_data.x,
+         park_size_2012 = med_park_size_data.y,
+         park_pct_2020 = park_pct_city_data.x, 
+         park_pct_2012 = park_pct_city_data.y,
+         .keep = "unused") %>%
+  select(-year.x, -year.y) %>%
+  mutate(size_change = (park_size_2020 - park_size_2012)/park_size_2012,
+         size_direction = case_when(size_change > 0 ~ "Increase", TRUE ~ "Decrease"),
+         pct_change = (park_pct_2020 - park_pct_2012)/park_pct_2012,
+         pct_direction = case_when(pct_change > 0 ~ "Increase", TRUE ~ "Decrease")) %>%
+  arrange(desc(size_change))
+
+print.data.frame(compare_size)
+
+compare_size = compare_size %>% slice_max(abs(pct_change), n = 10)
+
+max_size = max(compare_size$park_pct_2020)
+min_size = min(compare_size$park_pct_2012)
+  
+plot = compare_size %>%
+  ggplot() + 
+  theme_void() + 
+  
+  # Year Labels
+  geom_text(label="2012", x=0, y=max_size + 1.75,
+            hjust=0.5,
+            size=5,
+            colour="#555555",
+            family = "Segoe UI Semibold")  +
+  geom_text(label="2020", x=9, y=max_size + 1.75,
+            hjust=0.5,
+            size=5,
+            colour="#555555",
+            family = "Segoe UI Semibold")  +    
+
+  # Rect
+  
+  geom_rect(aes(xmin = 0, xmax = 9, ymin = min_size, ymax = max_size + 1.2), 
+            fill = "white", 
+            color = "#CCCCCC") +
+  
+  # Slope lines
+  geom_segment(aes(x = 0,
+                   xend = 9,
+                   y = park_pct_2012,
+                   yend = park_pct_2020,
+                   color = size_direction),
+               size=.75,
+               show.legend = FALSE) +  
+  
+  # Points at end of each slope line
+  geom_point(data = compare_size,
+            aes(x=0,
+                y=park_pct_2012,
+                color = size_direction),
+            size = 3,
+            show.legend = FALSE) +  
+  geom_point(data = compare_size,
+            aes(x=9,
+                y=park_pct_2020,
+                color = size_direction),
+            size = 3,
+            show.legend = FALSE) +    
+  
+  # Text labels at end of each slope line
+  geom_text_repel(data = compare_size,
+            aes(label = glue("{city} ({park_pct_2012}%)"),
+                x=-0.2,
+                y=park_pct_2012),
+            hjust=1,
+            size=3.5,
+            min.segment.length = 2,            
+            direction = "y",
+            family = "Segoe UI Light") +
+  
+  geom_text_repel(data = compare_size,
+            aes(label = glue("{city} ({park_pct_2020}%)"),
+                x=9.2,
+                y=park_pct_2020),
+            hjust=0,
+            size=3.5,
+            min.segment.length = 2,
+            direction = "y",
+            family = "Segoe UI Light") +  
+  
+  scale_x_continuous(limits = c(-2, 11)) + 
+  scale_y_continuous(limits = c(min_size, max_size + 2)) +   
+  scale_color_manual(values=c("#C63E2C", "#64C75F")) +
+  
+  labs(title = "Parkland as Percentage of City Area",
+       subtitle = "<p>Select cities with the <em>greatest change in available parkland</em> are shown.<br><br><strong>Albuquerque, Jacksonville, Denver</strong>, and <strong>Nashville</strong> not only added to their available parkland, but exhibited an <span style='color: #64C75F'><strong>increase in median park size</strong></span>. Although <strong>Seattle, San Antonio, Mesa,</strong> and <strong>Fresno</strong> added additional parkland, they exhibited a <span style='color: #C63E2C'><strong>decrease in median park size</strong></span>.</p>",
+        caption = "Source: The Trust for Public Land | @a_lipphardt") +
+  
+  theme(text = element_text(family = "Segoe UI Semibold", color = "#333333"),
+        
+        plot.title = element_markdown(size = 18, 
+                                      hjust = 0.5, 
+                                      margin = margin(t = 10, b= 10)),
+        
+        plot.subtitle = element_textbox_simple(size = 12,
+                                               halign = 0.5,
+                                               margin = margin(l = 5, r = 10),
+                                               family = "Segoe UI"),
+        
+        plot.background = element_rect(fill = "#F1F3FF", 
+                                       color = "#F3FEFE"),
+        
+        plot.caption = element_markdown(size = 12, 
+                                        color = "#555555", 
+                                        margin = margin(t = 10, b = 5, r = 5)))
+                 
+  
+
+```
+
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r save_plot, warning=FALSE}
+
+ #This will save your most recent plot
+ggsave(plot = plot,
+       filename = "parkland.png",
+       width=8,
+       height=10,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+```
+
+![Select cities with the greatest change in available parkland are shown. Albuquerque, Jacksonville, Denver, and Nashville not only added to their available parkland, but exhibited an increase in median park size. Although Seattle, San Antonio, Mesa, and Fresno added additional parkland, they exhibited a decrease in median park size.](parkland.png)
+
+
+
+
+
+
+
