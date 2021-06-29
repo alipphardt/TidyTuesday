@@ -587,7 +587,31 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag
 in your post on twitter\!
 
 ``` r
- #This will save your most recent plot
+ggsave(plot = cat_plot,
+       filename = "cat_bigrams.png",
+       width=15,
+       height=5,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+ggsave(plot = bird_plot,
+       filename = "bird_bigrams.png",
+       width=15,
+       height=5,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+ggsave(plot = dog_plot,
+       filename = "dog_bigrams.png",
+       width=15,
+       height=5,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+
 ggsave(plot = final_plot,
        filename = "animal_rescues_bigrams.png",
        width=15,
