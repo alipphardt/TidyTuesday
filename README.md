@@ -1,8 +1,12 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 27 - Animal Rescues
+[![There were 3,649 cat incidents between 2009 and 2021. Cats may often become trapped in areas of the house such as under the floor boards, in the washing machine, on window ledges, or in cars. There were 1,530 bird incidents between 2009 and 2021. Birds may often become trapped when their legs become stuck in netting or wire. Common locations include underneath railway bridges or rooftops. Incidents incldue both domesticated and wild birds.
+There were 1,194 dog incidents between 2009 and 2021. Dogs may often become trapped when their head, leg, or paw become stuck in items near the household such as gates, fences, railways, or fox and rabbit holes. ](animal-rescues/animal_rescues_bigrams.png)](https://github.com/alipphardt/TidyTuesday/tree/main/animal-rescues)
+
 ## Week 26 - Park Access
-![Select cities with the greatest change in available parkland are shown. Albuquerque, Jacksonville, Denver, and Nashville not only added to their available parkland, but exhibited an increase in median park size. Although Seattle, San Antonio, Mesa, and Fresno added additional parkland, they exhibited a decrease in median park size.](park-access/parkland.png)
+[![Select cities with the greatest change in available parkland are shown. Albuquerque, Jacksonville, Denver, and Nashville not only added to their available parkland, but exhibited an increase in median park size. Although Seattle, San Antonio, Mesa, and Fresno added additional parkland, they exhibited a decrease in median park size.](park-access/parkland.png)](https://github.com/alipphardt/TidyTuesday/tree/main/park-access)
 
 ## Week 25 - Du Bois Challenge and Juneteenth Revisited
 [![Du Bois Challenge Tweet Engagement](juneteenth/render/dubois-v2.png)](https://github.com/alipphardt/TidyTuesday/tree/main/juneteenth)
