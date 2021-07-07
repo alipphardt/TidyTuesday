@@ -1,0 +1,278 @@
+---
+title: "Independence Days"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+
+As such we encourage everyone of all skills to participate!
+
+```{r setup, warning=FALSE, results = FALSE, message = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidytuesdayR)
+library(tidyverse)
+
+library(lubridate)
+library(scales)
+library(glue)
+library(ggtext)
+library(Cairo)
+
+
+library(extrafont)
+loadfonts(device = "win", quiet = TRUE)
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make it available in the `holidays` object.
+
+[Independence Days](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-07-06/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+#holidays <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-06/holidays.csv')
+#write_csv(holidays, 'holidays.csv')
+
+holidays <- read_csv('holidays.csv') 
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+glimpse(holidays)
+
+
+```
+
+# Wrangling and Exploration
+
+Countries with no independence day
+
+```{r no_holiday}
+
+print.data.frame(holidays %>% filter(is.na(date_parsed)) %>% select(country))
+
+```
+
+Count top countries for **independence_from**
+
+```{r top_countries}
+
+holidays %>% count(independence_from) %>% 
+  filter(!is.na(independence_from)) %>% 
+  slice_max(n=10, n)
+
+top5_countries = holidays %>% count(independence_from) %>% 
+  filter(!is.na(independence_from)) %>% 
+  slice_max(n=5, n) %>%
+  pull(independence_from)
+
+
+```
+
+Countries with multiple independence days
+
+```{r multiple_days}
+
+print.data.frame(holidays %>% count(country) %>% filter(n > 1))
+
+```
+
+
+Countries that have been independent for the longest 
+
+```{r years_independent}
+
+holidays %>% mutate(date = as.POSIXct(date_parsed), 
+                    years_independent = lubridate::now() - date,
+                    years_independent = as.numeric(years_independent, units = "days") %/% 365) %>%
+  select(country, date, years_independent) %>%
+  filter(!is.na(date)) %>% 
+  slice_max(n=10, years_independent) 
+  
+
+```
+
+Let's look at a histogram of dates to see if there is any peculiar clustering:
+
+```{r date_histogram}
+
+holidays %>% mutate(date = as.POSIXct(date_parsed)) %>% 
+  ggplot(aes(y=date)) +
+  geom_histogram() +
+  coord_flip() +
+  labs(y = "Year", x ="Count", title = "Histogram of Independence Day Holidays")
+
+```
+
+Faceting on top 5 countries based on **independence_from**
+
+```{r date_histogram_facet}
+
+
+holidays %>% mutate(date = as.POSIXct(date_parsed)) %>% 
+  filter(independence_from %in% top5_countries) %>%
+  ggplot(aes(y=date, fill=independence_from)) +
+  geom_histogram(show.legend=FALSE) +
+  facet_wrap(~independence_from) +
+  coord_flip() +
+  labs(y = "Year", x ="Count", title = "Histogram of Independence Day Holidays")
+
+
+```
+
+
+
+
+
+# Visualization
+
+Let's narrow in on what was happening with the Soviet Union in the late 1900s.
+
+```{r soviet_union}
+
+positions = c(-0.5, # Lithuania
+              1,    # Latvia
+              0.5,  # Georgia
+              -1,   # Ukraine
+              1,    # Moldova
+              -0.5, # Kyrgyzstan
+              0.5,  # Uzbekistan
+              -0.75,# Tajikistan
+              0.75, # Armenia
+              -0.5, # Azerbaijan
+              1)    # Kazakhstan
+
+
+soviet = holidays %>%
+  filter(independence_from == "Soviet Union") %>%
+  arrange(date_parsed) %>%
+  mutate(position = positions,
+         date_parsed = as_date(date_parsed))
+
+label_positions = c(20,   # Lithuania 
+                    20,   # Latvia
+                    -120, # Georgia
+                    -120, # Ukraine
+                    -120, # Moldova
+                    -120, # Kyrgyzstan
+                    -120, # Uzbekistan	
+                    20,   # Tajikistan
+                    20,   # Armenia	
+                    20,   # Azerbaijan
+                    20)   # Kazakhstan
+
+
+timeline = soviet %>% ggplot(aes(x = date_parsed, y = position)) +
+  
+  geom_segment(aes(x=date_parsed, 
+                   xend=date_parsed,
+                   y=0, 
+                   yend=position)) +
+  
+  geom_hline(yintercept = 0, size = 2) + 
+  
+  geom_segment(aes(x=date_parsed, 
+                   xend=date_parsed+label_positions,
+                   y=position, 
+                   yend=position),
+               alpha = 0.3) + 
+  
+  geom_textbox(aes(x = date_parsed + label_positions, 
+                   y = position, 
+                   label = glue("<strong>{country}</strong><br>{date_of_holiday}")),
+               hjust = 0,
+               halign = 0.5,
+               width = unit(0.08, "npc"),
+               size = 4,
+               family = "Segoe UI",
+               box.colour = "black",
+               fill = "#F9F5CD",
+               color = "black") +
+  
+  geom_point(aes(fill = country), colour = "black", pch = 21, size = 4, show.legend = FALSE)   +
+  
+  scale_x_date(limits = as_date(c("1990-01-01", "1992-12-31"))) +
+  scale_y_continuous(limits = c(-1.1, 1.1)) + 
+  
+  theme_minimal() +
+  
+  labs(x="",
+       y="",
+       title = "Collapse of the Soviet Union",
+       subtitle = glue("Between 1986 and 1991, Mikhail Gorbachev adopted policies of <strong>glasnost (openness)</strong> and <strong>perestroika (restructuring)</strong>, which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1992."),
+       caption = "<strong>Source:</strong> Wikipedia.org | <strong>Visualization:</strong> @a_lipphardt") +
+    
+  theme(axis.ticks.y = element_blank(),
+        
+        axis.text.y = element_blank(),
+        
+        axis.text.x = element_text(family = "Segoe UI Black",
+                                             color = "#333333",
+                                             size = 14),
+        
+        panel.grid = element_blank(),
+        
+        plot.title = element_textbox_simple(family = "Stencil",
+                                            size = 20, 
+                                            margin = margin(b= 20)),
+        
+        plot.subtitle = element_textbox_simple(family = "Palatino Linotype",
+                                               size = 16,
+                                               margin = margin(b = 20)),
+        
+        plot.caption = element_textbox_simple(family = "Segoe UI Semilight",
+                                              size = 14,
+                                              halign = 1,
+                                              margin = margin(r = 10, t = 20))) 
+
+
+```
+
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r save_plot, warning=FALSE}
+
+ggsave(plot = timeline,
+       filename = "soviet-union-collapse.png",
+       width=15,
+       height=10,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+```
+
+
+![Collapse of the Soviet Union. Between 1986 and 1991, Mikhail Gorbachev adopted policies of glasnost (openness) and perestroika (restructuring), which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1992.](soviet-union-collapse.png)
+
+
+
+
+
