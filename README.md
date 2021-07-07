@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 28 - Independence Days
+[![Collapse of the Soviet Union. Between 1986 and 1991, Mikhail Gorbachev adopted policies of glasnost (openness) and perestroika (restructuring), which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1991.](independence-days/soviet-union-collapse.png)](https://github.com/alipphardt/TidyTuesday/tree/main/independence-days)
+
 ## Week 27 - Animal Rescues
 [![There were 3,649 cat incidents between 2009 and 2021. Cats may often become trapped in areas of the house such as under the floor boards, in the washing machine, on window ledges, or in cars. There were 1,530 bird incidents between 2009 and 2021. Birds may often become trapped when their legs become stuck in netting or wire. Common locations include underneath railway bridges or rooftops. Incidents incldue both domesticated and wild birds.
 There were 1,194 dog incidents between 2009 and 2021. Dogs may often become trapped when their head, leg, or paw become stuck in items near the household such as gates, fences, railways, or fox and rabbit holes. ](animal-rescues/animal_rescues_bigrams.png)](https://github.com/alipphardt/TidyTuesday/tree/main/animal-rescues)
