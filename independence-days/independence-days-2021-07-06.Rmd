@@ -223,7 +223,7 @@ timeline = soviet %>% ggplot(aes(x = date_parsed, y = position)) +
   labs(x="",
        y="",
        title = "Collapse of the Soviet Union",
-       subtitle = glue("Between 1986 and 1991, Mikhail Gorbachev adopted policies of <strong>glasnost (openness)</strong> and <strong>perestroika (restructuring)</strong>, which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1992."),
+       subtitle = glue("Between 1986 and 1991, Mikhail Gorbachev adopted policies of <strong>glasnost (openness)</strong> and <strong>perestroika (restructuring)</strong>, which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1991."),
        caption = "<strong>Source:</strong> Wikipedia.org | <strong>Visualization:</strong> @a_lipphardt") +
     
   theme(axis.ticks.y = element_blank(),
@@ -270,7 +270,7 @@ ggsave(plot = timeline,
 ```
 
 
-![Collapse of the Soviet Union. Between 1986 and 1991, Mikhail Gorbachev adopted policies of glasnost (openness) and perestroika (restructuring), which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1992.](soviet-union-collapse.png)
+![Collapse of the Soviet Union. Between 1986 and 1991, Mikhail Gorbachev adopted policies of glasnost (openness) and perestroika (restructuring), which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1991.](soviet-union-collapse.png)
 
 
 
