@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 29 - Scooby Doo Episodes
+[![The Monsters of Scooby Doo. With more than 600 mysteries in the history of the franchise, the gang has frequently encountered the same monster on multiple occasions. The following graph shows the Top 50 monsters by number of appearances (indicated in the orange nodes) and whether they've appeared alongside other monsters (indicated by brown edges). Thicker edges in the graph represent more appearances for a given pair of monsters.](scooby-doo/scooby-doo.png)](https://github.com/alipphardt/TidyTuesday/tree/main/scooby-doo)
+
 ## Week 28 - Independence Days
 [![Collapse of the Soviet Union. Between 1986 and 1991, Mikhail Gorbachev adopted policies of glasnost (openness) and perestroika (restructuring), which opened the gates for public discussion surrounding independence. Lithuania was the first to declare independence and served as a model to other Soviet Union countries. Following a failed coup against Gorbachev in August, remaining countries quickly followed suit and claimed their independence, with the Soviet Union dissolving by December 1991.](independence-days/soviet-union-collapse.png)](https://github.com/alipphardt/TidyTuesday/tree/main/independence-days)
 
