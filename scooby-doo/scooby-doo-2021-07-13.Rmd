@@ -1,0 +1,298 @@
+---
+title: "Scooby Doo Episodes"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+
+As such we encourage everyone of all skills to participate!
+
+```{r setup, warning=FALSE, results = FALSE, message = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidytuesdayR)
+library(tidyverse)
+
+library(lubridate)
+library(scales)
+library(glue)
+library(ggtext)
+library(Cairo)
+
+
+library(extrafont)
+loadfonts(device = "win", quiet = TRUE)
+
+library(colormap)
+library(viridis)
+library(ggforce)
+library(igraph)
+library(ggraph)
+
+
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make it available in the `scoobydoo` object.
+
+[Scooby Doo Episodes](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-07-13/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+tuesdata <- tidytuesdayR::tt_load(2021, week = 29)
+scoobydoo <- tuesdata$scoobydoo
+write_csv(scoobydoo, 'scoobydoo.csv')
+
+scoobydoo <- read_csv('scoobydoo.csv') %>%
+  mutate(monster_name = str_replace(monster_name, "Agent,4", "Agent 4,"),
+         monster_name = str_replace(monster_name, "Agent,8", "Agent 8,"),
+         monster_name = str_replace(monster_name, "Agent,9", "Agent 9,"), 
+         monster_name = str_replace_all(monster_name, "Bogle", "Bogel"), 
+         monster_name = str_replace_all(monster_name, "Demons", "Demon"),          
+         monster_name = str_replace_all(monster_name, "Phantoms", "Phantom"),          
+         monster_name = str_replace_all(monster_name, "Zombies", "Zombie"), 
+         monster_name = str_replace_all(monster_name, "Frankenstein's Monster", "Frankenstein"),
+         monster_name = str_replace_all(monster_name, "Evil Trees", "Evil Tree"), 
+         monster_name = str_replace_all(monster_name, "Dr Trebla", "Dr. Trebla"),
+         monster_name = str_replace_all(monster_name, "Trebal", "Trebla"), 
+         monster_name = str_replace_all(monster_name, pattern = regex("Agent \\d+"), replacement = "Agent X"))
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+glimpse(scoobydoo)
+
+
+```
+
+# Wrangling and Exploration
+
+
+Counts for several categoricals.
+
+```{r categorical_counts}
+
+categorical_count = function(tbl, column){
+  tbl %>% count({{column}}, sort = TRUE)
+}
+
+categorical_count(scoobydoo, series_name)
+categorical_count(scoobydoo, network)
+categorical_count(scoobydoo, format)
+categorical_count(scoobydoo, monster_gender)
+categorical_count(scoobydoo, monster_real)
+categorical_count(scoobydoo, setting_terrain)
+categorical_count(scoobydoo, setting_country_state)
+categorical_count(scoobydoo, non_suspect)
+categorical_count(scoobydoo, arrested)
+categorical_count(scoobydoo, culprit_gender)
+categorical_count(scoobydoo, if_it_wasnt_for)
+categorical_count(scoobydoo, and_that)
+categorical_count(scoobydoo, door_gag)
+categorical_count(scoobydoo, split_up)
+categorical_count(scoobydoo, another_mystery)
+categorical_count(scoobydoo, batman)
+
+
+```
+
+**monster_name** look's like it contains all monsters that appear in a given episode and from the looks of it there are some common monsters that have appeared in the series. Let's see whether we can unpack this column to get monsters that have appeared together.
+
+NOTE: Plural versions of monster names have been resolved to singular (e.g. Demons to Demon, Zombies to Zombie, etc) and mispellings have been resolved. There are also listings for each of the individual Agent characters, which have been collapsed into a single Agent X for a more interesting graph.
+
+```{r monster_name}
+
+
+# Unpack monster_name
+monster_names = scoobydoo %>% select(index, monster_name) %>% mutate(monster_name = str_split(monster_name, ",")) %>% unnest(monster_name) %>% distinct(index, monster_name)
+
+# Number of episodes monster has appeared in
+monster_name_counts = monster_names %>% filter(!(monster_name %in% c("NULL", ""))) %>% count(monster_name, sort=TRUE)
+
+# Monsters that have appears more than once
+monster_name_counts %>% filter(n > 1)
+
+# Monsters that were paired together
+monster_pairs = monster_names %>% inner_join(monster_names, by = "index") %>% 
+  filter(monster_name.x != monster_name.y,
+         monster_name.x < monster_name.y) %>% 
+  unique()
+
+# Top monster pairings
+monster_pair_counts = monster_pairs %>% count(monster_name.x, monster_name.y, sort=TRUE)
+
+# Unique monster names in pairings
+unique_names = unique(c(monster_pairs$monster_name.x, monster_pairs$monster_name.y))
+
+# Pull the top 50 monsters by number of appearances. 
+unique_names_top = monster_name_counts %>% 
+  filter(monster_name %in% unique_names) %>% 
+  slice_max(n=50, n, with_ties = FALSE) %>%
+  pull(monster_name)
+
+# Now pull all pairings for those top 50 monsters
+monster_pair_counts_top = monster_pair_counts %>% 
+  filter( (monster_name.x %in% unique_names_top) & (monster_name.y %in% unique_names_top) ) %>%
+  arrange(monster_name.x)
+
+
+```
+
+
+
+# Visualization
+
+Create a chord diagram, with monster names arranged in a circle. Each point around the circle should relate to the number of episodes each monster appeared in. 
+
+```{r chord}
+
+# Scooby Doo Palette
+scooby_blue = "#8FEAFC"
+scooby_green = "#CAFF4D"
+scooby_orange = "#FF4400"
+scooby_brown = "#6F440F"
+
+
+# Monster Info for Vertices - Sort in Alphabetical Order
+
+monster_info = monster_name_counts %>% 
+  filter(monster_name %in% unique_names_top) %>%
+  mutate(strength = case_when(
+    n < 3 ~ "Low",
+    n < 10 ~ "Medium",
+    TRUE ~ "High"),
+    strength = as.factor(strength)) %>%
+  arrange(desc(monster_name))
+
+
+# Create graph based on pairings
+
+monster_graph = monster_pair_counts_top %>% 
+  graph_from_data_frame(directed = FALSE, 
+                        vertices = monster_info)
+
+
+# Number of vertices/monsters in graph
+number_of_monsters = gorder(monster_graph)
+
+
+# Calculate angle and hjust for each text label
+angle = 360 * (seq(1, number_of_monsters) - 0.5) / number_of_monsters
+angle_adj = ifelse(angle > 90 & angle<270, angle+180, angle)
+hjust = ifelse(angle > 90 & angle<270, 1, 0)
+
+
+# Create chord graph to show monster pairings and number of appearances
+chord_graph = ggraph(monster_graph, layout = "circle") +
+  
+  # Green circle on inside of graph
+  geom_circle(aes(x0 = 0, y0 = 0, r = 1), fill = scooby_green, color = "black", size = 1) +
+  
+  # Brown connections between monster pairs, more appearances result in thicker line
+  geom_edge_link(aes(edge_width = log(n)), 
+                 edge_colour=scooby_brown, 
+                 edge_alpha = 1, 
+                 show.legend = FALSE) +  
+  
+  # Orange circle/node for each monster
+  geom_node_point(aes(size = 5), fill = scooby_orange, colour = "black", pch = 21, 
+                  show.legend = FALSE) +
+  
+
+  # Number of appearances for a given monster
+  geom_node_text(aes(label=glue("{n}")), 
+                 size=3, 
+                 color="black", 
+                 show.legend = FALSE,
+                 family = "Segoe UI") +
+  
+  # Name of monster around outside of graph  
+  geom_node_text(aes(label=glue("     {name}     "), 
+                     angle = angle_adj, 
+                     hjust = hjust), 
+                 size=5, 
+                 color="black", 
+                 show.legend = FALSE,
+                 family = "Rockwell") +
+  
+  # Connections/edges should fall within this range scaled by number of appearances
+  scale_edge_width(range = c(1, 3)) +
+  
+  theme_void() +
+  
+  # Expand limits to add padding for node labels
+  expand_limits(x = c(-1.5, 1.5), y = c(-1.5, 1.5)) +
+  
+  labs(title = "The Monsters of Scooby Doo",
+       subtitle = "With more than 600 mysteries in the history of the franchise, the gang has frequently encountered the same monster on multiple occasions. The following graph shows the Top 50 monsters by number of appearances (indicated in the orange nodes) and whether they've appeared alongside other monsters (indicated by brown edges). Thicker edges in the graph represent more appearances for a given pair of monsters.",
+       caption = "<strong>Source:</strong> ScoobyPedia | <strong>Visualization:</strong> @a_lipphardt") +
+  
+  theme(plot.background = element_rect(fill = scooby_blue, color = scooby_blue),
+        
+        plot.title = element_textbox_simple(family = "Cooper Black",
+                                            halign = 0.5,
+                                            size = 20,
+                                            margin = margin(t=10,b=10)),
+        
+        plot.subtitle = element_textbox_simple(family = "Segoe UI",
+                                            halign = 0.5,
+                                            size = 16,
+                                            margin = margin(b=20, 
+                                                            l = 20, 
+                                                            r = 20)),
+        
+        plot.caption = element_textbox_simple(family = "Segoe UI Semilight",
+                                              size = 14,
+                                              halign = 1,
+                                              margin = margin(r = 10, t = 20, b = 5)))
+
+```
+
+
+
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r save_plot, warning=FALSE}
+
+ggsave(plot = chord_graph,
+       filename = "scooby-doo.png",
+       width=12,
+       height=12,
+       type = "cairo",
+       device = "png",
+       dpi = 300)
+
+```
+
+![The Monsters of Scooby Doo. With more than 600 mysteries in the history of the franchise, the gang has frequently encountered the same monster on multiple occasions. The following graph shows the Top 50 monsters by number of appearances (indicated in the orange nodes) and whether they've appeared alongside other monsters (indicated by brown edges). Thicker edges in the graph represent more appearances for a given pair of monsters.](scooby-doo.png)
+
+
+
+
+
