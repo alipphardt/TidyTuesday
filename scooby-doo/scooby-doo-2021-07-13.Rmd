@@ -218,13 +218,13 @@ chord_graph = ggraph(monster_graph, layout = "circle") +
                  show.legend = FALSE) +  
   
   # Orange circle/node for each monster
-  geom_node_point(aes(size = 5), fill = scooby_orange, colour = "black", pch = 21, 
+  geom_node_point(size = 8, fill = scooby_orange, colour = "black", pch = 21, 
                   show.legend = FALSE) +
   
 
   # Number of appearances for a given monster
   geom_node_text(aes(label=glue("{n}")), 
-                 size=3, 
+                 size=4, 
                  color="black", 
                  show.legend = FALSE,
                  family = "Segoe UI") +
