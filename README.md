@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 30 - U.S. Droughts
+[![Millions impacted by severe or extreme drought. California (pop. 39.5 million) experienced an extended period from 2014 thru 2016, in which more than 70% of it's population was affected by severe drought.](us-droughts/drought-heatmap.png)](https://github.com/alipphardt/TidyTuesday/tree/main/us-droughts)
+
 ## Week 29 - Scooby Doo Episodes
 [![The Monsters of Scooby Doo. With more than 600 mysteries in the history of the franchise, the gang has frequently encountered the same monster on multiple occasions. The following graph shows the Top 50 monsters by number of appearances (indicated in the orange nodes) and whether they've appeared alongside other monsters (indicated by brown edges). Thicker edges in the graph represent more appearances for a given pair of monsters.](scooby-doo/scooby-doo.png)](https://github.com/alipphardt/TidyTuesday/tree/main/scooby-doo)
 
