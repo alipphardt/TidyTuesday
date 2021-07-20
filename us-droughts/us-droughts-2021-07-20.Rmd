@@ -1,0 +1,229 @@
+---
+title: "US Droughts"
+author: Developed by Anthony Lipphardt
+output: github_document
+knit: (function(input, ...) { rmarkdown::render(input, output_file = 'README.md') })
+editor_options: 
+  chunk_output_type: console
+always_allow_html: true
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly [#TidyTuesday](https://github.com/rfordatascience/tidytuesday) event!
+
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+
+As such we encourage everyone of all skills to participate!
+
+```{r setup, warning=FALSE, results = FALSE, message = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidytuesdayR)
+library(tidyverse)
+
+library(lubridate)
+library(scales)
+library(glue)
+library(ggtext)
+library(Cairo)
+library(viridis)
+
+library(extrafont)
+loadfonts(device = "win", quiet = TRUE)
+
+
+```
+
+# Loading the Weekly Dataset
+
+Download the weekly data and make it available in the `drought` object.
+
+[U.S. Droughts](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-07-20/readme.md)
+
+```{r Load}
+
+# Loading Data for the First Time
+# tuesdata <- tidytuesdayR::tt_load(2021, week = 30)
+# drought <- tuesdata$drought
+# write_csv(drought, 'drought.csv')
+
+drought <- read_csv('drought.csv')
+
+```
+
+
+# Sample Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+glimpse(drought)
+
+
+```
+
+# Wrangling and Exploration
+
+
+Counts for categorical variables. There appears to be observations for all states, plus DC and Puerto Rico.
+
+```{r categorical_counts}
+
+categorical_count = function(tbl, column){
+  tbl %>% count({{column}}, sort = TRUE)
+}
+
+print.data.frame(categorical_count(drought, state_abb))
+categorical_count(drought, stat_fmt)
+categorical_count(drought, drought_lvl)
+
+
+```
+
+Let's check for missing values in numerical columns. It looks like only **area_total** and **pop_total** have missing values. Missing values only seem to occur for observations where a state was in extreme or exceptional drought. There doesnt seem to be any pattern with which there are missing values in those columns
+
+```{r missing}
+
+summary(drought %>% select(where(is.numeric)))
+
+drought %>%
+  filter(is.na(area_total) | is.na(pop_total)) %>%
+  select(-map_date, -stat_fmt) %>%
+  count(drought_lvl)
+
+drought %>% count(drought_lvl)
+
+drought %>%
+  select(area_total, pop_total) %>%
+  filter(area_total == 0 | pop_total == 0)
+
+
+```
+
+Which states were most frequently in a period of extreme drought?
+
+```{r extreme}
+
+drought %>% 
+  filter(drought_lvl %in% c("D3", "D4"), area_total > 0) %>%
+  count(state_abb, sort = TRUE)
+
+drought %>% 
+  filter(state_abb == "CA", drought_lvl %in% c("D3", "D4")) %>%
+  mutate(pop_total = case_when(
+    is.na(pop_total) ~ 0,
+    TRUE ~ pop_total
+  ),
+  drought_lvl = recode(drought_lvl, D3 = "Severe", D4 = "Extreme"),
+  drought_lvl = fct_rev(drought_lvl)) %>%
+  ggplot(aes(x=valid_start, y = pop_total/1000000)) +
+  geom_area(aes(fill = drought_lvl)) +
+  labs(title = "Millions affected by severe or extreme drought in California",
+       y = "",
+       x = "",
+       fill = "Drought Level")
+
+```
+
+
+# Visualization
+
+Using a heatmap to show extended periods of severe drought in the U.S.
+
+```{r heatmap}
+
+heatmap = drought %>% filter(drought_lvl %in% c("D3", "D4"),
+                   valid_start >= "2002-01-01",
+                   valid_start <= "2020-12-31") %>%
+  mutate(pop_total = case_when(
+    is.na(pop_total) ~ 0,
+    TRUE ~ pop_total
+  ),
+  state_abb = fct_rev(state_abb)) %>%
+  group_by(state_abb, valid_start) %>%
+  summarize(pop_total_severe = sum(pop_total)/1000000, .groups = "keep") %>%
+  # mutate(valid_start = parse_date_time(valid_start, "%Y-%m-%d"),
+  #        year = year(valid_start)) %>%
+
+  ggplot(aes(x = valid_start, y = state_abb)) +
+  geom_tile(aes(fill = pop_total_severe), alpha = 0.9) +
+  # geom_segment(data = as_tibble(seq(2001,2021)), aes(x=value, xend=value, y = "WY", yend = "AK")) +
+
+  scale_x_date(date_breaks = "1 years", date_labels = "%Y") +
+    guides(fill = guide_colorbar(title.position = "top")) +
+  scale_fill_viridis(option = "rocket") + 
+
+  theme_minimal() +
+  theme(legend.position = "top") +
+  
+  labs(x = "", 
+       y = "", 
+       fill = "Population in millions",
+       title = "Millions impacted by severe or extreme drought",
+       subtitle = "California (pop. 39.5 million) experienced an extended period from 2014 thru 2016, in which more than 70% of it's population was affected by severe drought.",
+       caption = "<strong>Source:</strong> U.S. Drought Monitor | <strong>Visualization:</strong> @a_lipphardt") +
+  
+  theme(plot.title = element_textbox_simple(family = "Segoe UI Semibold",
+                                            halign = 0.5,
+                                            size = 24,
+                                            margin = margin(t=10,b=10)),
+        
+        plot.subtitle = element_textbox_simple(family = "Segoe UI Semilight",
+                                            halign = 0.5,
+                                            size = 16,
+                                            margin = margin(b=20, 
+                                                            t = 5,
+                                                            l = 5, 
+                                                            r = 5)),
+        
+        plot.caption = element_textbox_simple(family = "Segoe UI Semilight",
+                                              size = 14,
+                                              halign = 1,
+                                              margin = margin(r = 10, t = 20, b = 5)),
+        
+        legend.title = element_text(family = "Segoe UI Semilight",
+                                              size = 12),
+        
+        legend.text = element_text(family = "Segoe UI Semilight",
+                                              size = 12),
+        
+        axis.text = element_text(family = "Segoe UI Semilight",
+                                              size = 10),
+        
+
+        panel.grid.major.x = element_line(color = "#333333"),
+        panel.grid.minor.x = element_blank()) 
+
+
+```
+
+
+
+# Saving Image(s)
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r save_plot, warning=FALSE}
+
+ggsave(plot = heatmap,
+       filename = "drought-heatmap.png",
+       width=16,
+       height=12,
+       type = "cairo",
+       device = "png",
+       dpi = 400)
+
+```
+
+
+![Millions impacted by severe or extreme drought. California (pop. 39.5 million) experienced an extended period from 2014 thru 2016, in which more than 70% of it's population was affected by severe drought.](drought-heatmap.png)
+
+
+
