@@ -1,6 +1,9 @@
 # TidyTuesday
 Weekly submissions for the #TidyTuesday challenge. Click each image to view the RMarkdown codebook and plot(s)
 
+## Week 31 - Olympic Medals
+[![Is there a home team advantage for Olympic host countries. Total medals (gold, silver, bronze) are indicated for the top 5 countries. Until 1992, the Winter and Summer games were held in the same year. More often than not, years where the country hosted appear to have increased wins.](olympic-medals/host-wins.png)](https://github.com/alipphardt/TidyTuesday/tree/main/olympic-medals)
+
 ## Week 30 - U.S. Droughts
 [![Millions impacted by severe or extreme drought. California (pop. 39.5 million) experienced an extended period from 2014 thru 2016, in which more than 70% of it's population was affected by severe drought.](us-droughts/drought-heatmap.png)](https://github.com/alipphardt/TidyTuesday/tree/main/us-droughts)
 
